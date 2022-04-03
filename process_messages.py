@@ -6,6 +6,12 @@ import pandas as pd
 import datetime as dt
 from  sqlalchemy import create_engine
 import time
+
+#import from local files
+import api_telegram
+import db_api
+
+
 warnings.filterwarnings("ignore")
 desired_width = 1000
 pd.set_option('display.width', desired_width)
@@ -60,59 +66,31 @@ db_string = "postgresql://" + db_login + ":" + db_password + "@" + db_host + ":"
 engine = create_engine(db_string)
 
 
-
-
-
-
-def processed(update_id):
-    sql = ''' update public.log_chat 
-              set processed=1 
-              where update_id= '''+ str(update_id)
-    connection = engine.connect()
-    connection.execute(sql)
-
-def addUser(dfAddUser):
-    dfAddUser.rename(columns={ 'message_from_id': 'user_id', 'message_date':'first_message_time'},  inplace=True)
-    dfAddUser['status']=0
-    dfAddUser.to_sql(name='users', con=engine, schema='public', if_exists='append', index=None)
-
-def updateStatus(status,chat_id):
-
-    sql = ''' update public.users 
-                  set status='''+ str(status) + ''' 
-                  where user_id= ''' + str(chat_id)
-    connection = engine.connect()
-    connection.execute(sql)
-
-
-
 while 1<2:
     time.sleep(0.1)
-    replies = pd.read_sql_query(sql,con=engine)
+    replies = db_api.get_replies()
     #print(replies)
 
     if len(replies) > 0:
         for i in range(0,len(replies)):
+            status = replies.iloc[i,14]
+            chat_id = replies.iloc[i, 2]
+            update_id = replies.iloc[i, 0]
+            message_text = replies.iloc[i, 9]
             try:
-                if replies.iloc[i,14] == None:  # статус когда пишет первый раз
-
-                    print(replies.iloc[i, 14])
-                    message_choise = 'Добрый день,' + str(replies.iloc[i, 7]) + '! Добро пожаловать, вот вам смайлик :)'
-                    body1 = {"chat_id": str(replies.iloc[i, 2]), "text": message_choise}
-                    rq.post(baseUrl + 'sendMessage', json=body1, headers=headers, verify=False)
+                if status == None:  # unknown chat_id
+                    print(status)
+                    message = 'Добрый день,' + str(replies.iloc[i, 7]) + '! Добро пожаловать, вот вам смайлик :)' # text to send
+                    api_telegram.send_message(chat_id=chat_id, message=message) # func to send text to telegram
                     dfAddUser = replies.loc[[i], ['username', 'message_from_id', 'first_name', 'last_name', 'message_date']]
-                    addUser(dfAddUser)
-                    updateStatus(0, replies.iloc[i, 2])
-
-                    #dfAddUser['message_from_id'] = int(dfAddUser.loc[0,'message_from_id'])
-
-                    processed(replies.iloc[i, 0])
-                elif replies.iloc[i, 14] == 0:  # статус когда не авторизован
-                    message_choise = 'Эхо: ' + replies.iloc[i, 9]
-                    body1 = {"chat_id": str(replies.iloc[i, 2]), "text": message_choise}
-                    print(str(replies.iloc[i, 6])+ ', ' + replies.iloc[i, 9])
-                    rq.post(baseUrl + 'sendMessage', json=body1, headers=headers, verify=False)
-                    processed(replies.iloc[i, 0])
+                    db_api.addUser(dfAddUser) # add new user to table in database
+                    db_api.updateStatus(0, chat_id) # change status to unauthorized
+                    db_api.processed(update_id) # process row in log table
+                elif status == 0:  # статус когда не авторизован
+                    message = 'Эхо: ' + message_text
+                    print(str(replies.iloc[i, 6])+ ', ' + message_text)
+                    api_telegram.send_message(chat_id=chat_id, message=message)  # func to send text to telegram
+                    db_api.processed(update_id)
             except: pass
 
 '''

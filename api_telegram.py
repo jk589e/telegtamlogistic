@@ -26,3 +26,8 @@ def get_updates():
     df = json_normalize(res["result"])
 
     return df
+
+def send_message(chat_id,message):
+    headers = {'content-type': 'application/json'}
+    body = {"chat_id": str(chat_id), "text": message}
+    rq.post(api_url + '/sendMessage', json=body, headers=headers, verify=False)
