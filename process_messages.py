@@ -93,6 +93,7 @@ while 1<2:
 
     if len(replies) > 0:
         for i in range(0,len(replies)):
+            try:
                 if replies.iloc[i,14] == None:  # статус когда пишет первый раз
 
                     print(replies.iloc[i, 14])
@@ -112,7 +113,7 @@ while 1<2:
                     print(str(replies.iloc[i, 6])+ ', ' + replies.iloc[i, 9])
                     rq.post(baseUrl + 'sendMessage', json=body1, headers=headers, verify=False)
                     processed(replies.iloc[i, 0])
-
+            except: pass
 
 '''
                 elif replies.iloc[i,3] == 1: # основной статус
