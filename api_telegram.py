@@ -5,7 +5,8 @@ from pandas.io.json import json_normalize
 import db_api
 
 base_url = "https://api.telegram.org/bot"
-bot_token = "5285834737:AAEQ5sIkdX2bdcAd6HQSjN1xzemp5UyMxgA"
+#bot_token = "5285834737:AAEQ5sIkdX2bdcAd6HQSjN1xzemp5UyMxgA"
+bot_token = "5353508249:AAEwYhk4JJVKgKxRAlsthZtmwdE26BrpJ-c"
 api_url= base_url + bot_token
 
 def joinCol(A,a,B,b):

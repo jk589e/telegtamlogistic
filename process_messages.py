@@ -17,29 +17,41 @@ pd.set_option('display.max_rows', 5000)
 while 1<2:
     time.sleep(0.1)
     replies = db_api.get_replies()
-    #print(replies)
+    print(len(replies))
 
     if len(replies) > 0:
         for i in range(0,len(replies)):
             status = replies.iloc[i,14]
+            print(status)
             chat_id = replies.iloc[i, 2]
             update_id = replies.iloc[i, 0]
             message_text = replies.iloc[i, 9]
-            try:
-                if status == None:  # unknown chat_id
-                    print(status)
-                    message = 'Добрый день,' + str(replies.iloc[i, 7]) + '! Добро пожаловать, вот вам смайлик :)' # text to send
-                    api_telegram.send_message(chat_id=chat_id, message=message) # func to send text to telegram
-                    dfAddUser = replies.loc[[i], ['username', 'message_from_id', 'first_name', 'last_name', 'message_date']]
-                    db_api.addUser(dfAddUser) # add new user to table in database
-                    db_api.updateStatus(0, chat_id) # change status to unauthorized
-                    db_api.processed(update_id) # process row in log table
-                elif status == 0:  # статус когда не авторизован
-                    message = 'Эхо: ' + message_text
-                    print(str(replies.iloc[i, 6])+ ', ' + message_text)
-                    api_telegram.send_message(chat_id=chat_id, message=message)  # func to send text to telegram
-                    db_api.processed(update_id)
-            except: pass
+
+            if message_text == None:
+                message_text = ""
+
+
+
+            if replies.iloc[i, 7] == None:
+                u_name = replies.iloc[i, 8]
+            else: u_name = replies.iloc[i, 7]
+            #try:
+            if status == None:  # unknown chat_id
+                print(status)
+                print(replies)
+                dfAddUser = replies.loc[[i], ['username', 'message_from_id', 'first_name', 'last_name', 'message_date']]
+                db_api.addUser(dfAddUser)  # add new user to table in database
+                db_api.updateStatus(0, chat_id)  # change status to unauthorized
+                message = 'Добрый день,' + u_name + '! Добро пожаловать, вот вам смайлик :). скоро сдесь появится новый функционал, а пока будет эхо сообщений' # text to send
+                api_telegram.send_message(chat_id=chat_id, message=message) # func to send text to telegram
+
+                db_api.processed(update_id) # process row in log table
+            elif status == 0:  # статус когда не авторизован
+                message = 'Эхо: ' + message_text
+                print(str(replies.iloc[i, 6])+ ', ' + message_text)
+                api_telegram.send_message(chat_id=chat_id, message=message)  # func to send text to telegram
+                db_api.processed(update_id)
+            #except: pass
 
 '''
                 elif replies.iloc[i,3] == 1: # основной статус
